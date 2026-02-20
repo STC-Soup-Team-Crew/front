@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 import { RootNavigator } from '@/src/navigation/RootNavigator';
+import { AuthProvider } from '@/src/contexts/AuthContext';
 import { fonts } from '@/src/theme';
 import { colors } from '@/src/theme/colors';
 
@@ -28,10 +29,10 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <AuthProvider>
       <RootNavigator />
       <StatusBar style="light" />
-    </>
+    </AuthProvider>
   );
 }
 

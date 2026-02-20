@@ -79,4 +79,31 @@ export const apiService = {
     // This can be called at app startup if the API URL is dynamic
     console.log(`API Base URL set to: ${baseUrl}`);
   },
+
+  /**
+   * Create a new recipe via POST
+   * @param payload - Recipe data with name, time, ingredients, steps
+   */
+  async createRecipe(payload: {
+    name: string;
+    time: string;
+    ingredients: string[];
+    steps: string[];
+  }): Promise<void> {
+    try {
+      await axios.post(`${API_BASE_URL}/api/recipes`, payload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 15000,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to create recipe'
+        );
+      }
+      throw error;
+    }
+  },
 };

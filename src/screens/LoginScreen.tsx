@@ -1,6 +1,5 @@
 /**
- * LoginScreen Component
- * Stub screen for future authentication flow
+ * LoginScreen — Meal Master branding, Clerk scaffolding + guest
  */
 
 import React, { useState } from 'react';
@@ -15,6 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { theme } from '../theme';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginScreenProps {
   navigation: any;
@@ -23,10 +23,11 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { signIn, continueAsGuest } = useAuth();
 
-  const handleLogin = () => {
-    // TODO: Implement actual authentication
-    console.log('Login pressed', { email, password });
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
+    await signIn(email, password);
   };
 
   return (
@@ -36,51 +37,49 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.content}>
-          {/* Header */}
+          {/* Branding */}
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to your account</Text>
+            <Text style={styles.brand}>Meal Master</Text>
+            <Text style={styles.subtitle}>Reduce waste. Eat well.</Text>
           </View>
 
           {/* Form */}
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="your@email.com"
-                placeholderTextColor={theme.colors.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={theme.colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor={theme.colors.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={theme.colors.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
 
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Sign In</Text>
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={() => navigation.navigate('SignUp')}
+            >
+              <Text style={styles.signUpButtonText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Sign Up Link */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Guest */}
+          <TouchableOpacity style={styles.guestLink} onPress={continueAsGuest}>
+            <Text style={styles.guestText}>Continue as Guest</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -101,13 +100,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xl,
   },
   header: {
+    alignItems: 'center',
     marginBottom: theme.spacing.xxxl,
   },
-  title: {
+  brand: {
     fontFamily: theme.typography.fontFamily.bold,
-    fontSize: theme.typography.fontSize['4xl'],
+    fontSize: 42,
     color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
     fontFamily: theme.typography.fontFamily.regular,
@@ -115,21 +115,13 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   form: {
-    gap: theme.spacing.lg,
-  },
-  inputContainer: {
-    gap: theme.spacing.sm,
-  },
-  label: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text,
+    gap: theme.spacing.md,
   },
   input: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.full,
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text,
@@ -137,9 +129,9 @@ const styles = StyleSheet.create({
   loginButton: {
     backgroundColor: theme.colors.button,
     paddingVertical: theme.spacing.lg,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
     ...theme.shadow.md,
   },
   loginButtonText: {
@@ -147,19 +139,25 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.buttonText,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  signUpButton: {
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.lg,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+  },
+  signUpButtonText: {
+    fontFamily: theme.typography.fontFamily.semibold,
+    fontSize: theme.typography.fontSize.lg,
+    color: theme.colors.text,
+  },
+  guestLink: {
+    alignItems: 'center',
     marginTop: theme.spacing.xxl,
   },
-  footerText: {
-    fontFamily: theme.typography.fontFamily.regular,
+  guestText: {
+    fontFamily: theme.typography.fontFamily.medium,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textMuted,
-  },
-  footerLink: {
-    fontFamily: theme.typography.fontFamily.semibold,
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text,
+    textDecorationLine: 'underline',
   },
 });
