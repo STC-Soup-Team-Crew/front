@@ -1,6 +1,6 @@
 /**
- * CameraScreen Component
- * Allows users to capture or upload photos of their fridge/pantry
+ * CameraScreen Component V2
+ * Capture or upload photos — no emojis, Poppins font, new palette
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Image,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,7 +33,6 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
 
-  // Request permissions on component mount
   useEffect(() => {
     if (!permission?.granted) {
       requestPermission();
@@ -44,7 +44,6 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
 
   const handleTakePhoto = async () => {
     if (!cameraRef || isCapturing) return;
-
     try {
       setIsCapturing(true);
       const photo = await cameraRef.takePictureAsync({
@@ -69,7 +68,6 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
         aspect: [4, 3],
         quality: 0.8,
       });
-
       if (!result.canceled) {
         setSelectedImage(result.assets[0].uri);
         setCameraActive(false);
@@ -85,13 +83,10 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
       Alert.alert('Error', 'Please select or take a photo first');
       return;
     }
-
     setIsLoading(true);
     try {
       const recipe = await apiService.uploadPhotoAndGetRecipe(selectedImage);
       setIsLoading(false);
-      
-      // Navigate to RecipeScreen with recipe data
       navigation.navigate('Recipe', { recipe });
     } catch (error) {
       setIsLoading(false);
@@ -107,34 +102,26 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
     setCameraActive(false);
   };
 
-  // Camera not permitted
   if (!permission?.granted) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.contentCenter}>
           <Text style={styles.title}>Camera Permission Required</Text>
           <Text style={styles.subtitle}>
             We need access to your camera to capture photos of your fridge or pantry.
           </Text>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={requestPermission}
-          >
+          <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
             <Text style={styles.primaryButtonText}>Grant Permission</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {cameraActive && !selectedImage ? (
-        <CameraView
-          ref={setCameraRef}
-          style={styles.camera}
-          facing="back"
-        >
+        <CameraView ref={setCameraRef} style={styles.camera} facing="back">
           <View style={styles.cameraOverlay}>
             <View style={styles.cameraTop} />
             <View style={styles.cameraBottom}>
@@ -142,7 +129,7 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
                 style={[styles.iconButton, styles.closeButton]}
                 onPress={() => setCameraActive(false)}
               >
-                <Text style={styles.iconButtonText}>✕</Text>
+                <Text style={styles.iconButtonText}>X</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -157,7 +144,7 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
                 style={[styles.iconButton, styles.galleryButton]}
                 onPress={handlePickFromGallery}
               >
-                <Text style={styles.iconButtonText}>🖼️</Text>
+                <Text style={styles.galleryLabel}>Gallery</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -179,16 +166,12 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
                 source={{ uri: selectedImage }}
                 style={[styles.previewImage, { overflow: 'hidden' } as any]}
               />
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={handleClearSelection}
-              >
-                <Text style={styles.removeButtonText}>✕</Text>
+              <TouchableOpacity style={styles.removeButton} onPress={handleClearSelection}>
+                <Text style={styles.removeButtonText}>X</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.placeholderContainer}>
-              <Text style={styles.placeholderIcon}>📸</Text>
               <Text style={styles.placeholderText}>No photo selected</Text>
             </View>
           )}
@@ -196,37 +179,34 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.secondaryButton, styles.marginBottom]}
+              style={styles.secondaryButton}
               onPress={() => setCameraActive(true)}
             >
-              <Text style={styles.secondaryButtonText}>📷 Take Photo</Text>
+              <Text style={styles.secondaryButtonText}>Take Photo</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.secondaryButton, styles.marginBottom]}
+              style={styles.secondaryButton}
               onPress={handlePickFromGallery}
             >
-              <Text style={styles.secondaryButtonText}>🖼️ Choose from Gallery</Text>
+              <Text style={styles.secondaryButtonText}>Choose from Gallery</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                !selectedImage && styles.disabledButton,
-              ]}
+              style={[styles.primaryButton, !selectedImage && styles.disabledButton]}
               onPress={handleGenerateRecipe}
               disabled={!selectedImage || isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={theme.colors.white} />
+                <ActivityIndicator color={theme.colors.buttonText} />
               ) : (
-                <Text style={styles.primaryButtonText}>Generate Recipe ✨</Text>
+                <Text style={styles.primaryButtonText}>Generate Recipe</Text>
               )}
             </TouchableOpacity>
           </View>
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -258,7 +238,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.button,
     justifyContent: 'center',
     alignItems: 'center',
     ...theme.shadow.lg,
@@ -268,7 +248,7 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     borderWidth: 3,
-    borderColor: theme.colors.white,
+    borderColor: theme.colors.buttonText,
   },
   iconButton: {
     width: 60,
@@ -279,39 +259,47 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   iconButtonText: {
-    fontSize: 28,
+    fontFamily: theme.typography.fontFamily.bold,
+    fontSize: 20,
+    color: theme.colors.white,
   },
   closeButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: 'rgba(232, 93, 93, 0.4)',
   },
   galleryButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  galleryLabel: {
+    fontFamily: theme.typography.fontFamily.medium,
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.white,
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    padding: theme.spacing.lg,
+    padding: theme.spacing.xl,
   },
   contentCenter: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
   },
   header: {
     marginBottom: theme.spacing.xl,
   },
   title: {
+    fontFamily: theme.typography.fontFamily.bold,
     fontSize: theme.typography.fontSize['3xl'],
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
+    color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
   subtitle: {
+    fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
-    color: theme.colors.textSecondary,
-    lineHeight: theme.typography.lineHeight.relaxed,
+    color: theme.colors.textMuted,
+    lineHeight: 24,
   },
   imagePreviewContainer: {
     position: 'relative',
@@ -323,7 +311,7 @@ const styles = StyleSheet.create({
   previewImage: {
     width: '100%',
     height: 300,
-    backgroundColor: theme.colors.lightGray,
+    backgroundColor: theme.colors.surface,
   },
   removeButton: {
     position: 'absolute',
@@ -338,8 +326,9 @@ const styles = StyleSheet.create({
     ...theme.shadow.md,
   },
   removeButtonText: {
+    fontFamily: theme.typography.fontFamily.bold,
     color: theme.colors.white,
-    fontSize: 20,
+    fontSize: 18,
   },
   placeholderContainer: {
     marginBottom: theme.spacing.xl,
@@ -349,48 +338,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.primaryLight,
+    borderColor: theme.colors.divider,
     borderStyle: 'dashed',
   },
-  placeholderIcon: {
-    fontSize: 48,
-    marginBottom: theme.spacing.md,
-  },
   placeholderText: {
+    fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textMuted,
   },
   buttonContainer: {
     gap: theme.spacing.md,
   },
-  marginBottom: {
-    marginBottom: 0,
-  },
   primaryButton: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.button,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
     alignItems: 'center',
     ...theme.shadow.md,
   },
   primaryButtonText: {
-    color: theme.colors.white,
+    fontFamily: theme.typography.fontFamily.semibold,
+    color: theme.colors.buttonText,
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.semibold,
   },
   secondaryButton: {
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: theme.colors.surfaceLight,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
-    ...theme.shadow.sm,
   },
   secondaryButtonText: {
-    color: theme.colors.white,
+    fontFamily: theme.typography.fontFamily.medium,
+    color: theme.colors.text,
     fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.semibold,
   },
   disabledButton: {
     opacity: 0.5,

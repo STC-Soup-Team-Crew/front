@@ -1,7 +1,9 @@
 /**
- * Screen Exports
+ * Screen Exports V2
  */
 
-export { HomeScreen } from './HomeScreen';
+export { DashboardScreen } from './DashboardScreen';
 export { CameraScreen } from './CameraScreen';
 export { RecipeScreen } from './RecipeScreen';
+export { LoginScreen } from './LoginScreen';
+export { SignUpScreen } from './SignUpScreen';

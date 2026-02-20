@@ -1,6 +1,6 @@
 /**
- * ErrorModal Component
- * Displays error messages with retry or dismiss options
+ * ErrorModal Component V2
+ * Error display with retry/dismiss — no emojis, Poppins font, new palette
  */
 
 import React from 'react';
@@ -23,7 +23,7 @@ interface ErrorModalProps {
 
 export const ErrorModal: React.FC<ErrorModalProps> = ({
   visible,
-  title = 'Oops! Something went wrong',
+  title = 'Something went wrong',
   message,
   onDismiss,
   onRetry,
@@ -37,9 +37,8 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={[styles.title, { fontWeight: '700' as any }]}>{title}</Text>
-          <Text style={[styles.message, { fontWeight: '400' as any }]}>{message}</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.message}>{message}</Text>
 
           <View style={styles.buttonContainer}>
             {onRetry && (
@@ -47,7 +46,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
                 style={[styles.button, styles.retryButton]}
                 onPress={onRetry}
               >
-                <Text style={styles.retryButtonText}>🔄 Retry</Text>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -66,36 +65,33 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.xl,
     paddingVertical: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     alignItems: 'center',
     maxWidth: '85%',
     ...theme.shadow.lg,
   },
-  errorIcon: {
-    fontSize: 48,
-    marginBottom: theme.spacing.md,
-  },
   title: {
+    fontFamily: theme.typography.fontFamily.bold,
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.error,
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
   },
   message: {
+    fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textMuted,
     marginBottom: theme.spacing.lg,
     textAlign: 'center',
-    lineHeight: theme.typography.lineHeight.relaxed,
+    lineHeight: 24,
   },
   buttonContainer: {
     gap: theme.spacing.md,
@@ -108,19 +104,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retryButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.button,
   },
   retryButtonText: {
-    color: theme.colors.white,
+    fontFamily: theme.typography.fontFamily.semibold,
+    color: theme.colors.buttonText,
     fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.semibold,
   },
   dismissButton: {
-    backgroundColor: theme.colors.lightGray,
+    backgroundColor: theme.colors.surface,
   },
   dismissButtonText: {
+    fontFamily: theme.typography.fontFamily.medium,
     color: theme.colors.text,
     fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.semibold,
   },
 });

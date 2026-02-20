@@ -1,6 +1,6 @@
 /**
- * LoadingModal Component
- * Shows loading spinner while API request is processing
+ * LoadingModal Component V2
+ * Loading spinner — no emojis, Poppins font, new palette
  */
 
 import React from 'react';
@@ -33,11 +33,11 @@ export const LoadingModal: React.FC<LoadingModalProps> = ({
         <View style={styles.container}>
           <ActivityIndicator
             size="large"
-            color={theme.colors.primary}
+            color={theme.colors.button}
             style={styles.spinner}
           />
-          <Text style={[styles.message, { fontWeight: '500' as any }]}>{message}</Text>
-          <Text style={[styles.subtext, { fontWeight: '400' as any }]}>This may take a moment...</Text>
+          <Text style={styles.message}>{message}</Text>
+          <Text style={styles.subtext}>This may take a moment...</Text>
         </View>
       </View>
     </Modal>
@@ -47,13 +47,13 @@ export const LoadingModal: React.FC<LoadingModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.xl,
     paddingVertical: theme.spacing.xxxl,
     paddingHorizontal: theme.spacing.xl,
     alignItems: 'center',
@@ -63,15 +63,16 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
   },
   message: {
+    fontFamily: theme.typography.fontFamily.semibold,
     fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
   },
   subtext: {
+    fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textMuted,
     textAlign: 'center',
   },
 });
