@@ -1,6 +1,5 @@
 /**
- * CameraScreen Component V2
- * Capture or upload photos — no emojis, Poppins font, new palette
+ * CameraScreen V3 — Choose Pic / Take Pic / Find
  */
 
 import React, { useEffect, useState } from 'react';
@@ -12,7 +11,6 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  ScrollView,
   SafeAreaView,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -34,27 +32,19 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
   const [cameraActive, setCameraActive] = useState(false);
 
   useEffect(() => {
-    if (!permission?.granted) {
-      requestPermission();
-    }
-    if (!galleryPermission?.granted) {
-      requestGalleryPermission();
-    }
+    if (!permission?.granted) requestPermission();
+    if (!galleryPermission?.granted) requestGalleryPermission();
   }, []);
 
   const handleTakePhoto = async () => {
     if (!cameraRef || isCapturing) return;
     try {
       setIsCapturing(true);
-      const photo = await cameraRef.takePictureAsync({
-        quality: 0.8,
-        base64: false,
-      });
+      const photo = await cameraRef.takePictureAsync({ quality: 0.8, base64: false });
       setSelectedImage(photo.uri);
       setCameraActive(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to take photo. Please try again.');
-      console.error(error);
     } finally {
       setIsCapturing(false);
     }
@@ -73,14 +63,13 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
         setCameraActive(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-      console.error(error);
+      Alert.alert('Error', 'Failed to pick image.');
     }
   };
 
-  const handleGenerateRecipe = async () => {
+  const handleFind = async () => {
     if (!selectedImage) {
-      Alert.alert('Error', 'Please select or take a photo first');
+      Alert.alert('No Photo', 'Please choose or take a photo first.');
       return;
     }
     setIsLoading(true);
@@ -90,204 +79,115 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
       navigation.navigate('Recipe', { recipe });
     } catch (error) {
       setIsLoading(false);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to generate recipe'
-      );
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to generate recipe');
     }
   };
 
-  const handleClearSelection = () => {
-    setSelectedImage(null);
-    setCameraActive(false);
-  };
-
+  /* ---- Permission gate ---- */
   if (!permission?.granted) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.contentCenter}>
+        <View style={styles.center}>
           <Text style={styles.title}>Camera Permission Required</Text>
           <Text style={styles.subtitle}>
-            We need access to your camera to capture photos of your fridge or pantry.
+            We need access to your camera to capture photos of your fridge.
           </Text>
-          <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
-            <Text style={styles.primaryButtonText}>Grant Permission</Text>
+          <TouchableOpacity style={styles.pillBtn} onPress={requestPermission}>
+            <Text style={styles.pillBtnText}>Grant Permission</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {cameraActive && !selectedImage ? (
+  /* ---- Live camera view ---- */
+  if (cameraActive && !selectedImage) {
+    return (
+      <SafeAreaView style={styles.container}>
         <CameraView ref={setCameraRef} style={styles.camera} facing="back">
           <View style={styles.cameraOverlay}>
-            <View style={styles.cameraTop} />
             <View style={styles.cameraBottom}>
-              <TouchableOpacity
-                style={[styles.iconButton, styles.closeButton]}
-                onPress={() => setCameraActive(false)}
-              >
-                <Text style={styles.iconButtonText}>X</Text>
+              <TouchableOpacity style={styles.camActionBtn} onPress={() => setCameraActive(false)}>
+                <Text style={styles.camActionText}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={[styles.circleButton, { opacity: isCapturing ? 0.6 : 1 }]}
+                style={[styles.shutterBtn, { opacity: isCapturing ? 0.6 : 1 }]}
                 onPress={handleTakePhoto}
                 disabled={isCapturing}
               >
-                <View style={styles.circleBorder} />
+                <View style={styles.shutterInner} />
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.iconButton, styles.galleryButton]}
-                onPress={handlePickFromGallery}
-              >
-                <Text style={styles.galleryLabel}>Gallery</Text>
+              <TouchableOpacity style={styles.camActionBtn} onPress={handlePickFromGallery}>
+                <Text style={styles.camActionText}>Gallery</Text>
               </TouchableOpacity>
             </View>
           </View>
         </CameraView>
-      ) : (
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Capture Your Fridge</Text>
-            <Text style={styles.subtitle}>
-              Take a photo of your fridge or pantry to generate recipes based on available ingredients
-            </Text>
-          </View>
+      </SafeAreaView>
+    );
+  }
 
-          {/* Image Preview */}
-          {selectedImage ? (
-            <View style={styles.imagePreviewContainer}>
-              <Image
-                source={{ uri: selectedImage }}
-                style={[styles.previewImage, { overflow: 'hidden' } as any]}
-              />
-              <TouchableOpacity style={styles.removeButton} onPress={handleClearSelection}>
-                <Text style={styles.removeButtonText}>X</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.placeholderContainer}>
-              <Text style={styles.placeholderText}>No photo selected</Text>
-            </View>
-          )}
+  /* ---- Default: Choose Pic / Take Pic / Find ---- */
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Scan Your Fridge</Text>
+        <Text style={styles.subtitle}>
+          Take or choose a photo, then tap Find to get recipe ideas
+        </Text>
 
-          {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => setCameraActive(true)}
-            >
-              <Text style={styles.secondaryButtonText}>Take Photo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handlePickFromGallery}
-            >
-              <Text style={styles.secondaryButtonText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.primaryButton, !selectedImage && styles.disabledButton]}
-              onPress={handleGenerateRecipe}
-              disabled={!selectedImage || isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.colors.buttonText} />
-              ) : (
-                <Text style={styles.primaryButtonText}>Generate Recipe</Text>
-              )}
+        {/* Preview */}
+        {selectedImage ? (
+          <View style={styles.previewWrap}>
+            <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+            <TouchableOpacity style={styles.clearBtn} onPress={() => setSelectedImage(null)}>
+              <Text style={styles.clearBtnText}>X</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      )}
+        ) : (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>No photo selected</Text>
+          </View>
+        )}
+
+        {/* Action buttons */}
+        <View style={styles.btnGroup}>
+          <TouchableOpacity style={styles.pillBtn} onPress={handlePickFromGallery}>
+            <Text style={styles.pillBtnText}>Choose Pic</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.pillBtn} onPress={() => setCameraActive(true)}>
+            <Text style={styles.pillBtnText}>Take Pic</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.pillBtnAccent, !selectedImage && styles.disabled]}
+            onPress={handleFind}
+            disabled={!selectedImage || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={theme.colors.buttonText} />
+            ) : (
+              <Text style={styles.pillBtnAccentText}>Find</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraOverlay: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  cameraTop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  cameraBottom: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingVertical: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.lg,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  circleButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.button,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...theme.shadow.lg,
-  },
-  circleBorder: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 3,
-    borderColor: theme.colors.buttonText,
-  },
-  iconButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  iconButtonText: {
-    fontFamily: theme.typography.fontFamily.bold,
-    fontSize: 20,
-    color: theme.colors.white,
-  },
-  closeButton: {
-    backgroundColor: 'rgba(232, 93, 93, 0.4)',
-  },
-  galleryButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  galleryLabel: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.white,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: theme.spacing.xl,
-  },
-  contentCenter: {
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.xl,
   },
-  header: {
-    marginBottom: theme.spacing.xl,
+  content: {
+    flex: 1,
+    padding: theme.spacing.xl,
   },
   title: {
     fontFamily: theme.typography.fontFamily.bold,
@@ -299,38 +199,38 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.textMuted,
+    marginBottom: theme.spacing.xl,
     lineHeight: 24,
   },
-  imagePreviewContainer: {
+  previewWrap: {
     position: 'relative',
-    marginBottom: theme.spacing.xl,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
+    marginBottom: theme.spacing.xl,
     ...theme.shadow.md,
   },
   previewImage: {
     width: '100%',
-    height: 300,
+    height: 260,
     backgroundColor: theme.colors.surface,
   },
-  removeButton: {
+  clearBtn: {
     position: 'absolute',
     top: theme.spacing.md,
     right: theme.spacing.md,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: theme.colors.error,
     justifyContent: 'center',
     alignItems: 'center',
-    ...theme.shadow.md,
   },
-  removeButtonText: {
+  clearBtnText: {
     fontFamily: theme.typography.fontFamily.bold,
     color: theme.colors.white,
-    fontSize: 18,
+    fontSize: 16,
   },
-  placeholderContainer: {
+  placeholder: {
     marginBottom: theme.spacing.xl,
     paddingVertical: theme.spacing.xxxl,
     borderRadius: theme.borderRadius.lg,
@@ -346,35 +246,66 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.textMuted,
   },
-  buttonContainer: {
+  btnGroup: {
     gap: theme.spacing.md,
   },
-  primaryButton: {
+  pillBtn: {
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.lg,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+  },
+  pillBtnText: {
+    fontFamily: theme.typography.fontFamily.semibold,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text,
+  },
+  pillBtnAccent: {
     backgroundColor: theme.colors.button,
     paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     ...theme.shadow.md,
   },
-  primaryButtonText: {
+  pillBtnAccentText: {
     fontFamily: theme.typography.fontFamily.semibold,
-    color: theme.colors.buttonText,
     fontSize: theme.typography.fontSize.lg,
+    color: theme.colors.buttonText,
   },
-  secondaryButton: {
-    backgroundColor: theme.colors.surfaceLight,
-    paddingVertical: theme.spacing.md,
+  disabled: { opacity: 0.5 },
+  /* Camera view */
+  camera: { flex: 1 },
+  cameraOverlay: { flex: 1, justifyContent: 'flex-end' },
+  cameraBottom: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: theme.spacing.xl,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
   },
-  secondaryButtonText: {
-    fontFamily: theme.typography.fontFamily.medium,
-    color: theme.colors.text,
-    fontSize: theme.typography.fontSize.base,
+  shutterBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.button,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  disabledButton: {
-    opacity: 0.5,
+  shutterInner: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 3,
+    borderColor: theme.colors.buttonText,
+  },
+  camActionBtn: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  camActionText: {
+    fontFamily: theme.typography.fontFamily.medium,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.white,
   },
 });

@@ -1,6 +1,5 @@
 /**
- * SignUpScreen Component
- * Stub screen for future registration flow
+ * SignUpScreen — Clerk auth scaffolding
  */
 
 import React, { useState } from 'react';
@@ -125,7 +124,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join Meal Maker today</Text>
+            <Text style={styles.subtitle}>Join Meal Master today</Text>
           </View>
 
           {/* OAuth Section */}
@@ -141,42 +140,33 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
 
           {/* Form */}
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Your name"
-                placeholderTextColor={theme.colors.textMuted}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              placeholderTextColor={theme.colors.textMuted}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="your@email.com"
-                placeholderTextColor={theme.colors.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={theme.colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Create a password"
-                placeholderTextColor={theme.colors.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={theme.colors.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
 
             <TouchableOpacity 
               style={[styles.signUpButton, loading && { opacity: 0.7 }]} 
@@ -249,21 +239,13 @@ const styles = StyleSheet.create({
     marginHorizontal: theme.spacing.md,
   },
   form: {
-    gap: theme.spacing.lg,
-  },
-  inputContainer: {
-    gap: theme.spacing.sm,
-  },
-  label: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text,
+    gap: theme.spacing.md,
   },
   input: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.full,
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text,
@@ -271,9 +253,9 @@ const styles = StyleSheet.create({
   signUpButton: {
     backgroundColor: theme.colors.button,
     paddingVertical: theme.spacing.lg,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
     ...theme.shadow.md,
   },
   signUpButtonText: {
