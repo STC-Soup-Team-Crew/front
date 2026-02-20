@@ -6,7 +6,7 @@ import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
@@ -15,7 +15,7 @@ import { MainTabNavigator } from './MainTabNavigator';
 const Stack = createNativeStackNavigator();
 
 export const RootNavigator: React.FC = () => {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isAuthenticated } = useAuth();
 
   if (!isLoaded) {
     return (
@@ -33,7 +33,7 @@ export const RootNavigator: React.FC = () => {
           contentStyle: { backgroundColor: theme.colors.background },
         } as any}
       >
-        {isSignedIn ? (
+        {isAuthenticated ? (
           <Stack.Screen name="Main" component={MainTabNavigator} />
         ) : (
           <>
