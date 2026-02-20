@@ -4,8 +4,10 @@
  */
 
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuth } from '@clerk/clerk-expo';
 import { theme } from '../theme';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { CameraScreen } from '../screens/CameraScreen';
@@ -15,10 +17,17 @@ import { SignUpScreen } from '../screens/SignUpScreen';
 
 const Stack = createNativeStackNavigator();
 
-// Toggle this flag to switch between auth and main flows
-const isAuthenticated = true;
-
 export const RootNavigator: React.FC = () => {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
+        <ActivityIndicator size="large" color={theme.colors.text} />
+      </View>
+    );
+  }
+
   return (
     <NavigationIndependentTree>
       <Stack.Navigator
@@ -38,7 +47,7 @@ export const RootNavigator: React.FC = () => {
           },
         } as any}
       >
-        {isAuthenticated ? (
+        {isSignedIn ? (
           <>
             <Stack.Screen
               name="Dashboard"

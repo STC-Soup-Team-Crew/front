@@ -13,20 +13,46 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
+import { useSignIn } from '@clerk/clerk-expo';
 import { theme } from '../theme';
+import OAuthButton from '@/components/OAuthButton';
 
 interface LoginScreenProps {
   navigation: any;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+  const { signIn, isLoaded, setActive } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: Implement actual authentication
-    console.log('Login pressed', { email, password });
+  const handleLogin = async () => {
+    if (!isLoaded) return;
+    setLoading(true);
+
+    try {
+      const signInAttempt = await signIn.create({
+        identifier: email,
+        password,
+      });
+
+      if (signInAttempt.status === 'complete') {
+        await setActive({
+          session: signInAttempt.createdSessionId,
+        });
+      } else {
+        console.error(JSON.stringify(signInAttempt, null, 2));
+        Alert.alert('Login failed', 'Please check your credentials');
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      Alert.alert('Error', err.errors?.[0]?.message || 'An error occurred during login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,6 +66,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           <View style={styles.header}>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to your account</Text>
+          </View>
+
+          {/* OAuth Section */}
+          <View style={styles.oauthContainer}>
+            <OAuthButton strategy="oauth_google">Sign in with Google</OAuthButton>
+          </View>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with email</Text>
+            <View style={styles.dividerLine} />
           </View>
 
           {/* Form */}
@@ -69,14 +106,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               />
             </View>
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Sign In</Text>
+            <TouchableOpacity 
+              style={[styles.loginButton, loading && { opacity: 0.7 }]} 
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              <Text style={styles.loginButtonText}>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Text>
             </TouchableOpacity>
           </View>
 
           {/* Sign Up Link */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
               <Text style={styles.footerLink}>Sign Up</Text>
             </TouchableOpacity>
@@ -101,7 +144,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xl,
   },
   header: {
-    marginBottom: theme.spacing.xxxl,
+    marginBottom: theme.spacing.xl,
   },
   title: {
     fontFamily: theme.typography.fontFamily.bold,
@@ -113,6 +156,25 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.textMuted,
+  },
+  oauthContainer: {
+    marginBottom: theme.spacing.xl,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.surface,
+  },
+  dividerText: {
+    fontFamily: theme.typography.fontFamily.regular,
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textMuted,
+    marginHorizontal: theme.spacing.md,
   },
   form: {
     gap: theme.spacing.lg,
