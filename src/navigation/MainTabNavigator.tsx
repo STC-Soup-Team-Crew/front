@@ -14,6 +14,7 @@ import { RecipeScreen } from '../screens/RecipeScreen';
 import { SavedRecipesScreen } from '../screens/SavedRecipesScreen';
 import { CreateRecipeScreen } from '../screens/CreateRecipeScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { SearchScreen } from '../screens/SearchScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -67,6 +68,23 @@ const SavedStackNavigator: React.FC = () => (
   </SavedStack.Navigator>
 );
 
+/* ---- Search stack: SearchScreen -> Recipe ---- */
+const SearchStack = createNativeStackNavigator();
+const SearchStackNavigator: React.FC = () => (
+  <SearchStack.Navigator screenOptions={defaultStackOptions}>
+    <SearchStack.Screen
+      name="SearchList"
+      component={SearchScreen as any}
+      options={{ headerShown: false }}
+    />
+    <SearchStack.Screen
+      name="Recipe"
+      component={RecipeScreen as any}
+      options={{ headerTitle: 'Recipe', headerBackTitle: 'Back' }}
+    />
+  </SearchStack.Navigator>
+);
+
 /* ---- Tab icon (text-based, no emojis) ---- */
 const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text
@@ -104,6 +122,14 @@ export const MainTabNavigator: React.FC = () => (
       options={{
         tabBarLabel: 'Saved',
         tabBarIcon: ({ focused }) => <TabIcon label="S" focused={focused} />,
+      }}
+    />
+    <Tab.Screen
+      name="SearchTab"
+      component={SearchStackNavigator}
+      options={{
+        tabBarLabel: 'Search',
+        tabBarIcon: ({ focused }) => <TabIcon label="🔍" focused={focused} />,
       }}
     />
     <Tab.Screen

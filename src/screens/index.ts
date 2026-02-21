@@ -10,3 +10,4 @@ export { SignUpScreen } from './SignUpScreen';
 export { SavedRecipesScreen } from './SavedRecipesScreen';
 export { CreateRecipeScreen } from './CreateRecipeScreen';
 export { ProfileScreen } from './ProfileScreen';
+export { SearchScreen } from './SearchScreen';

@@ -88,7 +88,39 @@ export const apiService = {
   },
 
   /**
-   * Set a new API base URL
+   * Search recipes by ingredients
+   * @param ingredients - Array of ingredient names to search for
+   * @returns Array of matching recipes
+   */
+  async searchRecipesByIngredients(ingredients: string[]): Promise<RecipeResponse[]> {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL?.replace('/upload-image/', '') 
+        || 'https://server-915802731426.us-west1.run.app/api/v1';
+      const url = `${baseUrl}/recipes/search`;
+
+      const response = await axios.get(url, {
+        params: { ingredients: ingredients.join(',') },
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+
+      if (!response.data || !Array.isArray(response.data)) {
+        return [];
+      }
+
+      return response.data.map((raw: any) => ({
+        name: raw.Name || raw.name,
+        ingredients: typeof raw.Ingredients === 'string' ? JSON.parse(raw.Ingredients) : (raw.Ingredients || []),
+        steps: typeof raw.Steps === 'string' ? JSON.parse(raw.Steps) : (raw.Steps || []),
+        time: raw.Time || raw.time,
+      }));
+    } catch (error) {
+      console.error('Search API Error:', error);
+      return [];
+    }
+  },
+
+  /**
    * @param baseUrl - The new API base URL
    */
   setBaseUrl(baseUrl: string): void {
