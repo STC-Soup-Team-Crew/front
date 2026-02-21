@@ -13,8 +13,10 @@ import {
   Share,
   Alert,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { theme } from '../theme';
+import { apiService } from '../services/apiService';
 
 interface Recipe {
   name: string;
@@ -36,6 +38,7 @@ export const RecipeScreen: React.FC<RecipeScreenProps> = ({ navigation, route })
   const recipe = route.params?.recipe;
   const [checkedSteps, setCheckedSteps] = useState<{ [key: number]: boolean }>({});
   const [checkedIngredients, setCheckedIngredients] = useState<{ [key: number]: boolean }>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!recipe) {
     return (
@@ -49,6 +52,18 @@ export const RecipeScreen: React.FC<RecipeScreenProps> = ({ navigation, route })
       </SafeAreaView>
     );
   }
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await apiService.saveRecipe(recipe);
+      Alert.alert('Success', 'Recipe saved successfully!');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save recipe');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const toggleStepCheck = (index: number) => {
     setCheckedSteps((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -187,6 +202,18 @@ export const RecipeScreen: React.FC<RecipeScreenProps> = ({ navigation, route })
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.saveButton, isSaving && styles.disabledButton]}
+            onPress={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color={theme.colors.buttonText} />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Recipe</Text>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.secondaryButton} onPress={handleShare}>
             <Text style={styles.secondaryButtonText}>Share Recipe</Text>
           </TouchableOpacity>
@@ -410,6 +437,23 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.semibold,
     color: theme.colors.buttonText,
     fontSize: theme.typography.fontSize.lg,
+  },
+  saveButton: {
+    backgroundColor: theme.colors.button,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+    ...theme.shadow.md,
+  },
+  saveButtonText: {
+    fontFamily: theme.typography.fontFamily.semibold,
+    color: theme.colors.buttonText,
+    fontSize: theme.typography.fontSize.lg,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   secondaryButton: {
     backgroundColor: theme.colors.surfaceLight,

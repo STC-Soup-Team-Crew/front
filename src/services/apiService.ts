@@ -106,22 +106,47 @@ export const apiService = {
     ingredients: string[];
     steps: string[];
   }): Promise<void> {
+    // Parse time string (e.g., "25 min") to an integer
+    const timeValue = parseInt(payload.time.replace(/[^0-9]/g, ''), 10) || 0;
+    
+    return this.saveRecipe({
+      name: payload.name,
+      time: timeValue,
+      ingredients: payload.ingredients,
+      steps: payload.steps,
+    });
+  },
+
+  /**
+   * Save a recipe to the database
+   * @param recipe - Recipe data to save
+   */
+  async saveRecipe(recipe: RecipeResponse): Promise<void> {
     try {
-      // Extract base URL from API_BASE_URL if needed, but for now just fix the reference
-      const url = API_BASE_URL.endsWith('/upload-image/') 
-        ? API_BASE_URL.replace('/v1/upload-image/', '/v1/recipes')
-        : API_BASE_URL;
-        
+      const url = process.env.EXPO_PUBLIC_DATABASE_SAVE_RECIPE_URL || 'https://server-915802731426.us-west1.run.app/api/v1/recipes/save';
+      
+      // Payload format as requested: Single object with actual arrays for steps/ingredients
+      const payload = {
+        Name: recipe.name,
+        Steps: recipe.steps,
+        Time: recipe.time || 0,
+        Ingredients: recipe.ingredients,
+      };
+
       await axios.post(url, payload, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         timeout: 15000,
       });
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        console.error('Save API Error:', error.response?.data || error.message);
         throw new Error(
           error.response?.data?.message ||
           error.message ||
-          'Failed to create recipe'
+          'Failed to save recipe'
         );
       }
       throw error;

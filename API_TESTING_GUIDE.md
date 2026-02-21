@@ -62,6 +62,26 @@ Form Fields:
 
 ---
 
+## API Endpoint 3: Save Recipe
+
+**Endpoint:** `POST /recipes/save`
+
+**Request Body:**
+```json
+[
+  {
+    "Name": "15-Minute Pancakes",
+    "Steps": "[\"Whisk dry ingredients\",\"Add milk and eggs\",\"Cook on buttered skillet\"]",
+    "Time": 15,
+    "Ingredients": "[\"Flour\",\"Eggs\",\"Milk\",\"Butter\"]"
+  }
+]
+```
+
+**Status:** 200 OK or 201 Created
+
+---
+
 ## Error Response Examples
 
 ### Recipe Not Found

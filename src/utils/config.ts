@@ -13,6 +13,7 @@ export const API_CONFIG = {
   endpoints: {
     generateRecipe: '/api/recipes/generate',
     getRecipe: '/api/recipes',
+    saveRecipe: '/recipes/save',
   },
 
   // Request timeout in milliseconds
