@@ -6,14 +6,22 @@
 import axios from 'axios';
 import * as FileSystem from 'expo-file-system';
 
+interface RawRecipeResponse {
+  Name: string;
+  Ingredients: string;
+  Steps: string;
+  Time: number;
+}
+
 interface RecipeResponse {
   name: string;
   ingredients: string[];
   steps: string[];
+  time?: number;
 }
 
 // Configure this with your actual API endpoint
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://server-915802731426.us-west1.run.app/api/v1/upload-image/';
 
 export const apiService = {
   /**
@@ -25,42 +33,50 @@ export const apiService = {
     try {
       // The FormData approach handles encoding automatically
       const formData = new FormData();
-      formData.append('photo', {
+      // Ensure the field name is 'file' as per the curl command
+      formData.append('file', {
         uri: photoUri,
         type: 'image/jpeg',
         name: 'fridge_photo.jpg',
       } as any);
 
       // POST the photo to the API
-      const uploadResponse = await axios.post(
-        `${API_BASE_URL}/api/recipes/generate`,
+      const response = await axios.post<RawRecipeResponse[]>(
+        API_BASE_URL,
         formData,
         {
           headers: {
+            'Accept': 'application/json',
             'Content-Type': 'multipart/form-data',
           },
           timeout: 30000,
         }
       );
 
-      // Extract the recipe ID or identifier from the response
-      const recipeId = uploadResponse.data.recipe_id || uploadResponse.data.id;
-
-      if (!recipeId) {
-        throw new Error('No recipe ID received from API');
+      if (!response.data || response.data.length === 0) {
+        throw new Error('No recipe found in the response');
       }
 
-      // GET the full recipe details
-      const recipeResponse = await axios.get<RecipeResponse>(
-        `${API_BASE_URL}/api/recipes/${recipeId}`,
-        {
-          timeout: 15000,
-        }
-      );
+      const rawRecipe = response.data[0];
 
-      return recipeResponse.data;
+      // Parse stringified arrays if they are strings, otherwise use as is
+      const ingredients = typeof rawRecipe.Ingredients === 'string' 
+        ? JSON.parse(rawRecipe.Ingredients) 
+        : rawRecipe.Ingredients;
+      
+      const steps = typeof rawRecipe.Steps === 'string' 
+        ? JSON.parse(rawRecipe.Steps) 
+        : rawRecipe.Steps;
+
+      return {
+        name: rawRecipe.Name,
+        ingredients: Array.isArray(ingredients) ? ingredients : [],
+        steps: Array.isArray(steps) ? steps : [],
+        time: rawRecipe.Time,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        console.error('API Error:', error.response?.data || error.message);
         throw new Error(
           error.response?.data?.message ||
           error.message ||
@@ -91,7 +107,12 @@ export const apiService = {
     steps: string[];
   }): Promise<void> {
     try {
-      await axios.post(`${API_BASE_URL}/api/recipes`, payload, {
+      // Extract base URL from API_BASE_URL if needed, but for now just fix the reference
+      const url = API_BASE_URL.endsWith('/upload-image/') 
+        ? API_BASE_URL.replace('/v1/upload-image/', '/v1/recipes')
+        : API_BASE_URL;
+        
+      await axios.post(url, payload, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 15000,
       });

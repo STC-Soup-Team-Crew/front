@@ -163,7 +163,7 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
           <TouchableOpacity
             style={[styles.pillBtnAccent, !selectedImage && styles.disabled]}
             onPress={handleFind}
-            disabled={!selectedImage || isLoading}
+            disabled={isLoading}
           >
             {isLoading ? (
               <ActivityIndicator color={theme.colors.buttonText} />
