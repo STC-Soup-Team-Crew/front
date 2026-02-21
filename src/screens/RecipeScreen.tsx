@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { theme } from '../theme';
 import { apiService } from '../services/apiService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Recipe {
   name: string;
@@ -36,9 +37,11 @@ interface RecipeScreenProps {
 
 export const RecipeScreen: React.FC<RecipeScreenProps> = ({ navigation, route }) => {
   const recipe = route.params?.recipe;
+  const { user } = useAuth();
   const [checkedSteps, setCheckedSteps] = useState<{ [key: number]: boolean }>({});
   const [checkedIngredients, setCheckedIngredients] = useState<{ [key: number]: boolean }>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isFavoriting, setIsFavoriting] = useState(false);
 
   if (!recipe) {
     return (
@@ -62,6 +65,23 @@ export const RecipeScreen: React.FC<RecipeScreenProps> = ({ navigation, route })
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save recipe');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleFavorite = async () => {
+    if (!user) {
+      Alert.alert('Authentication Required', 'Please sign in to favorite recipes.');
+      return;
+    }
+    
+    setIsFavoriting(true);
+    try {
+      await apiService.favoriteRecipe(user.id, recipe);
+      Alert.alert('Success', 'Recipe added to favorites!');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to favorite recipe');
+    } finally {
+      setIsFavoriting(false);
     }
   };
 
@@ -202,6 +222,18 @@ export const RecipeScreen: React.FC<RecipeScreenProps> = ({ navigation, route })
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.favoriteButton, isFavoriting && styles.disabledButton]}
+            onPress={handleFavorite}
+            disabled={isFavoriting}
+          >
+            {isFavoriting ? (
+              <ActivityIndicator color={theme.colors.buttonText} />
+            ) : (
+              <Text style={styles.favoriteButtonText}>Favorite Recipe</Text>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.saveButton, isSaving && styles.disabledButton]}
             onPress={handleSave}
@@ -434,6 +466,20 @@ const styles = StyleSheet.create({
     ...theme.shadow.md,
   },
   primaryButtonText: {
+    fontFamily: theme.typography.fontFamily.semibold,
+    color: theme.colors.buttonText,
+    fontSize: theme.typography.fontSize.lg,
+  },
+  favoriteButton: {
+    backgroundColor: '#FF6B6B', // A nice red/pink for favorites
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+    ...theme.shadow.md,
+  },
+  favoriteButtonText: {
     fontFamily: theme.typography.fontFamily.semibold,
     color: theme.colors.buttonText,
     fontSize: theme.typography.fontSize.lg,

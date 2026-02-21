@@ -50,6 +50,23 @@ const HomeStackNavigator: React.FC = () => (
   </HomeStack.Navigator>
 );
 
+/* ---- Saved stack: SavedList -> Recipe ---- */
+const SavedStack = createNativeStackNavigator();
+const SavedStackNavigator: React.FC = () => (
+  <SavedStack.Navigator screenOptions={defaultStackOptions}>
+    <SavedStack.Screen
+      name="SavedList"
+      component={SavedRecipesScreen as any}
+      options={{ headerShown: false }}
+    />
+    <SavedStack.Screen
+      name="Recipe"
+      component={RecipeScreen as any}
+      options={{ headerTitle: 'Favorite Recipe', headerBackTitle: 'Back' }}
+    />
+  </SavedStack.Navigator>
+);
+
 /* ---- Tab icon (text-based, no emojis) ---- */
 const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text
@@ -83,7 +100,7 @@ export const MainTabNavigator: React.FC = () => (
     />
     <Tab.Screen
       name="SavedTab"
-      component={SavedRecipesScreen}
+      component={SavedStackNavigator}
       options={{
         tabBarLabel: 'Saved',
         tabBarIcon: ({ focused }) => <TabIcon label="S" focused={focused} />,

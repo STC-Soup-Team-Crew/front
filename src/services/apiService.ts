@@ -152,4 +152,74 @@ export const apiService = {
       throw error;
     }
   },
+
+  /**
+   * Favorite a recipe for a specific user
+   * @param userId - The user ID from AuthContext
+   * @param recipe - Recipe data to favorite
+   */
+  async favoriteRecipe(userId: string, recipe: RecipeResponse): Promise<void> {
+    try {
+      const url = process.env.EXPO_PUBLIC_DATABASE_SAVE_RECIPE_URL?.replace('/save', '/favorite') || 'https://server-915802731426.us-west1.run.app/api/v1/recipes/favorite';
+      
+      const payload = {
+        user_id: userId,
+        Name: recipe.name,
+        Steps: recipe.steps,
+        Time: recipe.time || 0,
+        Ingredients: recipe.ingredients,
+      };
+
+      await axios.post(url, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        timeout: 15000,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Favorite API Error:', error.response?.data || error.message);
+        throw new Error(
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to favorite recipe'
+        );
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get all favorite recipes for a specific user
+   * @param userId - The user ID from AuthContext
+   * @returns Array of favorite recipes
+   */
+  async getFavorites(userId: string): Promise<RecipeResponse[]> {
+    try {
+      const url = process.env.EXPO_PUBLIC_DATABASE_SAVE_RECIPE_URL?.replace('/save', '/favorite') || 'https://server-915802731426.us-west1.run.app/api/v1/recipes/favorite';
+      
+      const response = await axios.get(url, {
+        params: { user_id: userId },
+        headers: {
+          'Accept': 'application/json',
+        },
+        timeout: 15000,
+      });
+
+      if (!response.data || !Array.isArray(response.data)) {
+        return [];
+      }
+
+      return response.data.map((raw: any) => ({
+        name: raw.Name || raw.name,
+        ingredients: typeof raw.Ingredients === 'string' ? JSON.parse(raw.Ingredients) : (raw.Ingredients || []),
+        steps: typeof raw.Steps === 'string' ? JSON.parse(raw.Steps) : (raw.Steps || []),
+        time: raw.Time || raw.time,
+      }));
+    } catch (error) {
+      console.error('Get Favorites API Error:', error);
+      return []; // Return empty array on error to prevent UI crash
+    }
+  },
 };

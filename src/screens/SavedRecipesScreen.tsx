@@ -2,7 +2,7 @@
  * SavedRecipesScreen — Starred / saved recipes list
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,32 +10,92 @@ import {
   FlatList,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { theme } from '../theme';
+import { apiService } from '../services/apiService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SavedRecipe {
   id: string;
   name: string;
   time: string;
   starred: boolean;
+  ingredients?: string[];
+  steps?: string[];
 }
 
-const PLACEHOLDER_SAVED: SavedRecipe[] = [
-  { id: '1', name: 'Veggie Stir Fry', time: '25 min', starred: true },
-  { id: '2', name: 'Pasta Primavera', time: '30 min', starred: true },
-];
+export const SavedRecipesScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { user } = useAuth();
+  const [recipes, setRecipes] = useState<SavedRecipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-export const SavedRecipesScreen: React.FC = () => {
-  const [recipes, setRecipes] = useState<SavedRecipe[]>(PLACEHOLDER_SAVED);
+  const fetchFavorites = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const favorites = await apiService.getFavorites(user.id);
+      
+      const mappedRecipes: SavedRecipe[] = favorites.map((f, index) => ({
+        id: String(index), // Using index since ID is not returned from API
+        name: f.name,
+        time: f.time ? `${f.time} min` : 'N/A',
+        starred: true,
+        ingredients: f.ingredients,
+        steps: f.steps,
+      }));
+      
+      setRecipes(mappedRecipes);
+    } catch (error) {
+      console.error('Failed to fetch favorites:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchFavorites();
+    });
+    return unsubscribe;
+  }, [navigation, fetchFavorites]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFavorites();
+  };
 
   const toggleStar = (id: string) => {
+    // Note: This only toggles local state in this version.
+    // In a full implementation, you'd call a 'unfavorite' API.
     setRecipes((prev) =>
       prev.map((r) => (r.id === id ? { ...r, starred: !r.starred } : r))
     );
   };
 
+  const handleRecipePress = (item: SavedRecipe) => {
+    navigation.navigate('Recipe', {
+      recipe: {
+        name: item.name,
+        ingredients: item.ingredients || [],
+        steps: item.steps || [],
+        time: parseInt(item.time.replace(/[^0-9]/g, ''), 10) || 0,
+      },
+    });
+  };
+
   const renderItem = ({ item }: { item: SavedRecipe }) => (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => handleRecipePress(item)}
+      activeOpacity={0.7}
+    >
       <View style={styles.cardContent}>
         <Text style={styles.recipeName}>{item.name}</Text>
         <Text style={styles.recipeTime}>{item.time}</Text>
@@ -43,17 +103,37 @@ export const SavedRecipesScreen: React.FC = () => {
       <TouchableOpacity onPress={() => toggleStar(item.id)} style={styles.starBtn}>
         <Text style={styles.starText}>{item.starred ? '\u2605' : '\u2606'}</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>No saved recipes yet</Text>
-      <Text style={styles.emptySubtitle}>
-        Star a recipe to save it here
+      <Text style={styles.emptyTitle}>
+        {loading ? 'Fetching favorites...' : 'No saved recipes yet'}
       </Text>
+      {!loading && (
+        <Text style={styles.emptySubtitle}>
+          Star a recipe to save it here
+        </Text>
+      )}
     </View>
   );
+
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Saved</Text>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Not logged in</Text>
+          <Text style={styles.emptySubtitle}>
+            Please log in to view your favorite recipes
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -61,14 +141,27 @@ export const SavedRecipesScreen: React.FC = () => {
         <Text style={styles.title}>Saved</Text>
       </View>
 
-      <FlatList
-        data={recipes}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.button} />
+        </View>
+      ) : (
+        <FlatList
+          data={recipes}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={renderEmpty}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.button}
+            />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -77,6 +170,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     paddingTop: theme.spacing.xxl,
