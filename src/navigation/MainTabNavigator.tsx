@@ -85,6 +85,23 @@ const SearchStackNavigator: React.FC = () => (
   </SearchStack.Navigator>
 );
 
+/* ---- Create stack: CreateForm -> Recipe ---- */
+const CreateStack = createNativeStackNavigator();
+const CreateStackNavigator: React.FC = () => (
+  <CreateStack.Navigator screenOptions={defaultStackOptions}>
+    <CreateStack.Screen
+      name="CreateForm"
+      component={CreateRecipeScreen}
+      options={{ headerShown: false }}
+    />
+    <CreateStack.Screen
+      name="Recipe"
+      component={RecipeScreen as any}
+      options={{ headerTitle: 'New Recipe', headerBackTitle: 'Back' }}
+    />
+  </CreateStack.Navigator>
+);
+
 /* ---- Tab icon (text-based, no emojis) ---- */
 const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text
@@ -134,7 +151,7 @@ export const MainTabNavigator: React.FC = () => (
     />
     <Tab.Screen
       name="CreateTab"
-      component={CreateRecipeScreen}
+      component={CreateStackNavigator}
       options={{
         tabBarLabel: 'Create',
         tabBarIcon: ({ focused }) => <TabIcon label="+" focused={focused} />,

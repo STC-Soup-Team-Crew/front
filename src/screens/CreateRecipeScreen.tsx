@@ -15,10 +15,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme';
 import { apiService } from '../services/apiService';
 
 export const CreateRecipeScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const [name, setName] = useState('');
   const [time, setTime] = useState('');
   const [ingredients, setIngredients] = useState<string[]>(['']);
@@ -56,17 +58,32 @@ export const CreateRecipeScreen: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // Parse time string (e.g., "25 min") to an integer for the Recipe object
+      const timeValue = parseInt(time.replace(/[^0-9]/g, ''), 10) || 0;
+      const newRecipe = {
+        name: name.trim(),
+        time: timeValue,
+        ingredients: cleanIngredients,
+        steps: cleanSteps,
+      };
+
       await apiService.createRecipe({
         name: name.trim(),
         time: time.trim(),
         ingredients: cleanIngredients,
         steps: cleanSteps,
       });
+
       Alert.alert('Success', 'Recipe created!');
+      
+      // Clear form
       setName('');
       setTime('');
       setIngredients(['']);
       setSteps(['']);
+
+      // Navigate to Recipe screen with the new recipe data
+      navigation.navigate('Recipe', { recipe: newRecipe });
     } catch (error) {
       Alert.alert(
         'Error',
