@@ -11,3 +11,6 @@ export { SavedRecipesScreen } from './SavedRecipesScreen';
 export { CreateRecipeScreen } from './CreateRecipeScreen';
 export { ProfileScreen } from './ProfileScreen';
 export { SearchScreen } from './SearchScreen';
+export { FridgeShareFeedScreen } from './FridgeShareFeedScreen';
+export { PostItemScreen } from './PostItemScreen';
+export { ItemDetailScreen } from './ItemDetailScreen';

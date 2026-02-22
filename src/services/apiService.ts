@@ -20,6 +20,36 @@ interface RecipeResponse {
   time?: number;
 }
 
+// ---------- Fridge Share types ----------
+export interface FridgeListing {
+  id: string;
+  user_id: string;
+  user_display_name: string;
+  title: string;
+  description?: string;
+  items: string[];
+  quantity?: string;
+  expiry_hint?: string;
+  pickup_instructions?: string;
+  image_url?: string;
+  status: 'available' | 'claimed' | 'deleted';
+  claimed_by?: string;
+  claimed_by_name?: string;
+  created_at: string;
+}
+
+export interface FridgeListingPayload {
+  user_id: string;
+  user_display_name: string;
+  title: string;
+  description?: string;
+  items: string[];
+  quantity?: string;
+  expiry_hint?: string;
+  pickup_instructions?: string;
+  image_url?: string;
+}
+
 // Configure this with your actual API endpoint
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://server-915802731426.us-west1.run.app/api/v1/upload-image/';
 
@@ -252,6 +282,120 @@ export const apiService = {
     } catch (error) {
       console.error('Get Favorites API Error:', error);
       return []; // Return empty array on error to prevent UI crash
+    }
+  },
+
+  // ---------- Fridge Share (leftover sharing) ----------
+
+  _fridgeBaseUrl(): string {
+    const base = process.env.EXPO_PUBLIC_API_URL?.replace('/upload-image/', '')
+      || 'https://server-915802731426.us-west1.run.app/api/v1';
+    return `${base}/fridge-listings`;
+  },
+
+  /**
+   * Create a new fridge listing (post leftover items)
+   */
+  async createFridgeListing(payload: FridgeListingPayload): Promise<FridgeListing> {
+    try {
+      const response = await axios.post<FridgeListing>(this._fridgeBaseUrl(), payload, {
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Create Listing API Error:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.detail || error.message || 'Failed to create listing');
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get available fridge listings (community feed)
+   */
+  async getFridgeListings(status: string = 'available'): Promise<FridgeListing[]> {
+    try {
+      const response = await axios.get<FridgeListing[]>(this._fridgeBaseUrl(), {
+        params: { status },
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error('Get Fridge Listings API Error:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get my own listings
+   */
+  async getMyFridgeListings(userId: string): Promise<FridgeListing[]> {
+    try {
+      const response = await axios.get<FridgeListing[]>(`${this._fridgeBaseUrl()}/mine`, {
+        params: { user_id: userId },
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error('Get My Listings API Error:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get a single listing by ID
+   */
+  async getFridgeListingById(listingId: string): Promise<FridgeListing | null> {
+    try {
+      const response = await axios.get<FridgeListing>(`${this._fridgeBaseUrl()}/${listingId}`, {
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get Listing By ID API Error:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Claim an available listing
+   */
+  async claimFridgeListing(listingId: string, claimedBy: string, claimedByName: string): Promise<FridgeListing> {
+    try {
+      const response = await axios.patch<FridgeListing>(
+        `${this._fridgeBaseUrl()}/${listingId}/claim`,
+        { claimed_by: claimedBy, claimed_by_name: claimedByName },
+        { headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, timeout: 15000 },
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.detail || 'Failed to claim listing');
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a listing (owner only)
+   */
+  async deleteFridgeListing(listingId: string, userId: string): Promise<void> {
+    try {
+      await axios.delete(`${this._fridgeBaseUrl()}/${listingId}`, {
+        params: { user_id: userId },
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.detail || 'Failed to delete listing');
+      }
+      throw error;
     }
   },
 };

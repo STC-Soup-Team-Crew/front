@@ -15,6 +15,9 @@ import { SavedRecipesScreen } from '../screens/SavedRecipesScreen';
 import { CreateRecipeScreen } from '../screens/CreateRecipeScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { FridgeShareFeedScreen } from '../screens/FridgeShareFeedScreen';
+import { PostItemScreen } from '../screens/PostItemScreen';
+import { ItemDetailScreen } from '../screens/ItemDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -102,6 +105,28 @@ const CreateStackNavigator: React.FC = () => (
   </CreateStack.Navigator>
 );
 
+/* ---- Share stack: FridgeShareFeed -> PostItem / ItemDetail ---- */
+const ShareStack = createNativeStackNavigator();
+const ShareStackNavigator: React.FC = () => (
+  <ShareStack.Navigator screenOptions={defaultStackOptions}>
+    <ShareStack.Screen
+      name="FridgeShareFeed"
+      component={FridgeShareFeedScreen as any}
+      options={{ headerShown: false }}
+    />
+    <ShareStack.Screen
+      name="PostItem"
+      component={PostItemScreen as any}
+      options={{ headerTitle: 'Share Items', headerBackTitle: 'Back' }}
+    />
+    <ShareStack.Screen
+      name="ItemDetail"
+      component={ItemDetailScreen as any}
+      options={{ headerTitle: 'Item Details', headerBackTitle: 'Back' }}
+    />
+  </ShareStack.Navigator>
+);
+
 /* ---- Tab icon (text-based, no emojis) ---- */
 const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => (
   <Text
@@ -147,6 +172,14 @@ export const MainTabNavigator: React.FC = () => (
       options={{
         tabBarLabel: 'Search',
         tabBarIcon: ({ focused }) => <TabIcon label="🔍" focused={focused} />,
+      }}
+    />
+    <Tab.Screen
+      name="ShareTab"
+      component={ShareStackNavigator}
+      options={{
+        tabBarLabel: 'Share',
+        tabBarIcon: ({ focused }) => <TabIcon label="🤝" focused={focused} />,
       }}
     />
     <Tab.Screen
