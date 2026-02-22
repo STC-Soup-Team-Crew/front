@@ -98,9 +98,18 @@ function SignUpScreen() {
                 <Text style={styles.subtitle}>Create your account to get started</Text>
             </View>
 
-            {/* OAuthButton component can also be used to create accounts */}
-            <View style={{ marginBottom: 24 }}>
-                <OAuthButton strategy="oauth_google">Sign in with Google</OAuthButton>
+            {/* OAuth sign-up options */}
+            <View style={{ marginBottom: 8 }}>
+                <OAuthButton strategy="oauth_google">Sign up with Google</OAuthButton>
+            </View>
+            <View style={{ marginBottom: 16 }}>
+                <OAuthButton strategy="oauth_apple">Sign up with Apple</OAuthButton>
+            </View>
+
+            <View style={styles.oauthDivider}>
+                <View style={styles.oauthDividerLine} />
+                <Text style={styles.oauthDividerText}>or continue with email</Text>
+                <View style={styles.oauthDividerLine} />
             </View>
 
             <View style={styles.form}>

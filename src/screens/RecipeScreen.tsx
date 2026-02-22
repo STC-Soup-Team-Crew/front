@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.lg,
   },
   favoriteButton: {
-    backgroundColor: '#FF6B6B', // A nice red/pink for favorites
+    backgroundColor: theme.colors.success,
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.xl,
     borderRadius: theme.borderRadius.xl,
@@ -502,11 +502,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   secondaryButton: {
-    backgroundColor: theme.colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceSolid,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
   },
   secondaryButtonText: {
     fontFamily: theme.typography.fontFamily.medium,

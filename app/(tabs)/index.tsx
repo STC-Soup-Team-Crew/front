@@ -43,9 +43,18 @@ function SignInScreen() {
                 <Text style={styles.subtitle}>Enter your credentials to access your account</Text>
             </View>
 
-            {/* OAuthButton component to handle OAuth sign-in */}
-            <View style={{ marginBottom: 24 }}>
+            {/* OAuth sign-in options */}
+            <View style={{ marginBottom: 8 }}>
                 <OAuthButton strategy="oauth_google">Sign in with Google</OAuthButton>
+            </View>
+            <View style={{ marginBottom: 16 }}>
+                <OAuthButton strategy="oauth_apple">Sign in with Apple</OAuthButton>
+            </View>
+
+            <View style={styles.oauthDivider}>
+                <View style={styles.oauthDividerLine} />
+                <Text style={styles.oauthDividerText}>or continue with email</Text>
+                <View style={styles.oauthDividerLine} />
             </View>
 
             <View style={styles.form}>

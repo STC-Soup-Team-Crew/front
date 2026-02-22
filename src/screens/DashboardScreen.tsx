@@ -1,8 +1,8 @@
 /**
- * DashboardScreen — Home tab with top recipe card, ingredients list, scan CTA
+ * DashboardScreen — Home tab with top recipe card, grocery list, scan CTA
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,36 +10,112 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
+  TextInput,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 
-interface Ingredient {
+interface GroceryItem {
   id: string;
   name: string;
+}
+
+interface Recipe {
+  name: string;
+  subtitle: string;
 }
 
 interface DashboardScreenProps {
   navigation: any;
 }
 
-const PLACEHOLDER_INGREDIENTS: Ingredient[] = [
+const STORAGE_KEY = '@grocery_list';
+
+const PLACEHOLDER_ITEMS: GroceryItem[] = [
   { id: '1', name: 'Carrots' },
   { id: '2', name: 'Milk' },
   { id: '3', name: 'Cookies' },
 ];
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(PLACEHOLDER_INGREDIENTS);
+const RECOMMENDED_RECIPES: Recipe[] = [
+  { name: 'Creamy Pasta', subtitle: 'A quick 15-minute meal with what you have.' },
+  { name: 'Fresh Garden Salad', subtitle: 'Light and refreshing for a healthy lunch.' },
+  { name: 'Veggie Stir Fry', subtitle: 'Toss your favorite vegetables in a savory sauce.' },
+  { name: 'Hearty Tomato Soup', subtitle: 'Comforting soup perfect for a chilly day.' },
+  { name: 'Avocado Toast', subtitle: 'Simple, trendy, and delicious breakfast.' },
+];
 
-  const addIngredient = () => {
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
+  const [groceryList, setGroceryList] = useState<GroceryItem[]>([]);
+  const [randomRecipe, setRandomRecipe] = useState<Recipe>(RECOMMENDED_RECIPES[0]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load grocery list on mount
+  useEffect(() => {
+    const loadGroceryList = async () => {
+      try {
+        const savedList = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedList !== null) {
+          setGroceryList(JSON.parse(savedList));
+        } else {
+          setGroceryList(PLACEHOLDER_ITEMS);
+        }
+      } catch (e) {
+        console.error('Failed to load grocery list', e);
+        setGroceryList(PLACEHOLDER_ITEMS);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    loadGroceryList();
+
+    const randomIndex = Math.floor(Math.random() * RECOMMENDED_RECIPES.length);
+    setRandomRecipe(RECOMMENDED_RECIPES[randomIndex]);
+  }, []);
+
+  // Save grocery list whenever it changes
+  useEffect(() => {
+    const saveGroceryList = async () => {
+      if (!isLoaded) return;
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(groceryList));
+      } catch (e) {
+        console.error('Failed to save grocery list', e);
+      }
+    };
+
+    saveGroceryList();
+  }, [groceryList, isLoaded]);
+
+  const addGroceryItem = () => {
     const newId = String(Date.now());
-    setIngredients((prev) => [...prev, { id: newId, name: 'New item' }]);
+    setGroceryList((prev) => [...prev, { id: newId, name: '' }]);
   };
 
-  const renderIngredient = ({ item }: { item: Ingredient }) => (
-    <View style={styles.ingredientRow}>
+  const updateGroceryItem = (id: string, newName: string) => {
+    setGroceryList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, name: newName } : item))
+    );
+  };
+
+  const removeGroceryItem = (id: string) => {
+    setGroceryList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const renderGroceryItem = ({ item }: { item: GroceryItem }) => (
+    <View style={styles.groceryRow}>
       <View style={styles.bullet} />
-      <Text style={styles.ingredientText}>{item.name}</Text>
+      <TextInput
+        style={styles.groceryText}
+        value={item.name}
+        onChangeText={(text) => updateGroceryItem(item.id, text)}
+        placeholder="Type item..."
+        placeholderTextColor={theme.colors.textMuted}
+      />
+      <TouchableOpacity onPress={() => removeGroceryItem(item.id)} style={styles.removeBtn}>
+        <Text style={styles.removeBtnText}>✕</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -53,24 +129,27 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
 
       {/* Top Recipe Card */}
       <View style={styles.recipeCard}>
-        <Text style={styles.recipeCardTitle}>Top Recipe</Text>
-        <Text style={styles.recipeCardSubtitle}>
-          Scan your fridge to get a personalized suggestion
-        </Text>
+        <Text style={styles.sectionTitle}>Top Recipe</Text>
+        <View style={styles.recipeCardContent}>
+          <Text style={styles.recipeCardTitle}>{randomRecipe.name}</Text>
+          <Text style={styles.recipeCardSubtitle}>
+            {randomRecipe.subtitle}
+          </Text>
+        </View>
       </View>
 
-      {/* Ingredients Section */}
-      <View style={styles.ingredientsSection}>
+      {/* Grocery List Section */}
+      <View style={styles.grocerySection}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Ingredients</Text>
-          <TouchableOpacity onPress={addIngredient} style={styles.addBtn}>
+          <Text style={styles.sectionTitle}>Grocery List</Text>
+          <TouchableOpacity onPress={addGroceryItem} style={styles.addBtn}>
             <Text style={styles.addBtnText}>+</Text>
           </TouchableOpacity>
         </View>
 
         <FlatList
-          data={ingredients}
-          renderItem={renderIngredient}
+          data={groceryList}
+          renderItem={renderGroceryItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
         />
@@ -117,6 +196,9 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
     ...theme.shadow.sm,
   },
+  recipeCardContent: {
+    marginTop: theme.spacing.sm,
+  },
   recipeCardTitle: {
     fontFamily: theme.typography.fontFamily.semibold,
     fontSize: theme.typography.fontSize.lg,
@@ -128,7 +210,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textMuted,
   },
-  ingredientsSection: {
+  grocerySection: {
     flex: 1,
     paddingHorizontal: theme.spacing.xl,
   },
@@ -157,7 +239,7 @@ const styles = StyleSheet.create({
     color: theme.colors.buttonText,
     lineHeight: 24,
   },
-  ingredientRow: {
+  groceryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: theme.spacing.sm,
@@ -169,10 +251,19 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.text,
     marginRight: theme.spacing.md,
   },
-  ingredientText: {
+  groceryText: {
+    flex: 1,
     fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text,
+    padding: 0, // for Android
+  },
+  removeBtn: {
+    padding: theme.spacing.xs,
+  },
+  removeBtnText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
   },
   ctaButton: {
     backgroundColor: theme.colors.button,

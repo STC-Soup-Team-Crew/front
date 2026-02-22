@@ -3,8 +3,9 @@ import { useSSO } from '@clerk/clerk-expo'
 import { OAuthStrategy } from '@clerk/types'
 import * as AuthSession from 'expo-auth-session'
 import * as WebBrowser from 'expo-web-browser'
+import { AntDesign } from '@expo/vector-icons'
 import React, { useCallback, useEffect } from 'react'
-import { Platform, Text, TouchableOpacity } from 'react-native'
+import { Platform, Text, TouchableOpacity, View } from 'react-native'
 
 export const useWarmUpBrowser = () => {
     useEffect(() => {
@@ -18,14 +19,12 @@ export const useWarmUpBrowser = () => {
 WebBrowser.maybeCompleteAuthSession()
 
 interface Props {
-    // The OAuthStrategy type from Clerk allows you to specify the provider you want to use in this specific instance of the OAuthButton component
     strategy: OAuthStrategy
     children: React.ReactNode
 }
 
 export default function OAuthButton({ strategy, children }: Props) {
     useWarmUpBrowser()
-    // useSSO hook from Clerk SDK to support various SSO providers
     const { startSSOFlow } = useSSO()
 
     const onPress = useCallback(async () => {
@@ -45,9 +44,31 @@ export default function OAuthButton({ strategy, children }: Props) {
         }
     }, [startSSOFlow, strategy])
 
+    const isGoogle = strategy === 'oauth_google'
+    const isApple = strategy === 'oauth_apple'
+
+    const buttonStyle = isGoogle
+        ? styles.googleButton
+        : isApple
+        ? styles.appleButton
+        : styles.button
+
+    const textStyle = isGoogle
+        ? styles.googleButtonText
+        : isApple
+        ? styles.appleButtonText
+        : styles.buttonText
+
     return (
-        <TouchableOpacity onPress={onPress} style={styles.button}>
-            <Text style={styles.buttonText}>{children}</Text>
+        <TouchableOpacity onPress={onPress} style={buttonStyle}>
+            {isGoogle ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <AntDesign name="google" size={20} color="#4285F4" />
+                    <Text style={textStyle}>{children}</Text>
+                </View>
+            ) : (
+                <Text style={textStyle}>{children}</Text>
+            )}
         </TouchableOpacity>
     )
 }
