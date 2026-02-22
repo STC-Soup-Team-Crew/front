@@ -398,4 +398,219 @@ export const apiService = {
       throw error;
     }
   },
+
+  // ---------- Impact Tracking ----------
+
+  _impactBaseUrl(): string {
+    const base = process.env.EXPO_PUBLIC_API_URL?.replace('/upload-image/', '')
+      || 'https://server-915802731426.us-west1.run.app/api/v1';
+    return `${base}/impact`;
+  },
+
+  /**
+   * Calculate and log environmental impact for ingredients
+   * @param userId - User ID
+   * @param ingredients - List of ingredients with name, quantity, unit
+   * @param source - Source of the impact ('recipe', 'fridge_share', 'manual')
+   * @param sourceId - Optional ID of the source recipe/listing
+   */
+  async calculateImpact(
+    userId: string,
+    ingredients: Array<{ name: string; quantity?: number; unit?: string }>,
+    source: 'recipe' | 'fridge_share' | 'manual' = 'recipe',
+    sourceId?: string
+  ): Promise<{
+    event_id: string;
+    totals: { waste_prevented_kg: number; money_saved_usd: number; co2_avoided_kg: number };
+    breakdown: Array<{ name: string; quantity: number; unit: string; weight_kg: number; cost_usd: number; co2_kg: number; found_in_lookup: boolean }>;
+    gamification: {
+      streak: number;
+      is_new_streak_record: boolean;
+      new_badges: Array<{ type: string; tier: string; name: string; description: string }>;
+      weekly_progress: { current_kg: number; goal_kg: number; percentage: number; week_start: string };
+    };
+    message: string;
+  }> {
+    try {
+      const response = await axios.post(
+        `${this._impactBaseUrl()}/calculate`,
+        {
+          user_id: userId,
+          ingredients: ingredients.map(i => ({
+            name: i.name,
+            quantity: i.quantity || 1,
+            unit: i.unit || 'piece'
+          })),
+          source,
+          source_id: sourceId
+        },
+        {
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          timeout: 15000,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Calculate Impact API Error:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.detail || 'Failed to calculate impact');
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get quick impact estimate without logging
+   * @param ingredients - List of ingredients to estimate
+   */
+  async estimateImpact(
+    ingredients: Array<{ name: string; quantity?: number; unit?: string }>
+  ): Promise<{
+    totals: { waste_prevented_kg: number; money_saved_usd: number; co2_avoided_kg: number };
+    breakdown: Array<{ name: string; quantity: number; unit: string; weight_kg: number; cost_usd: number; co2_kg: number }>;
+  }> {
+    try {
+      const response = await axios.post(
+        `${this._impactBaseUrl()}/estimate`,
+        ingredients.map(i => ({
+          name: i.name,
+          quantity: i.quantity || 1,
+          unit: i.unit || 'piece'
+        })),
+        {
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          timeout: 10000,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Estimate Impact API Error:', error);
+      // Return zeros on error
+      return {
+        totals: { waste_prevented_kg: 0, money_saved_usd: 0, co2_avoided_kg: 0 },
+        breakdown: []
+      };
+    }
+  },
+
+  /**
+   * Get weekly and all-time impact summary for a user
+   * @param userId - User ID
+   */
+  async getImpactSummary(userId: string): Promise<{
+    user_id: string;
+    this_week: { period: string; waste_kg: number; money_usd: number; co2_kg: number; event_count: number };
+    last_week: { period: string; waste_kg: number; money_usd: number; co2_kg: number; event_count: number };
+    all_time: { period: string; waste_kg: number; money_usd: number; co2_kg: number; event_count: number };
+    weekly_goal: { current_kg: number; goal_kg: number; percentage: number; week_start: string };
+    comparison: { waste_kg_change?: number; money_usd_change?: number; co2_kg_change?: number };
+  }> {
+    try {
+      const response = await axios.get(`${this._impactBaseUrl()}/summary/${userId}`, {
+        headers: { 'Accept': 'application/json' },
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get Impact Summary API Error:', error);
+      // Return default values on error
+      const today = new Date();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay() + 1);
+      
+      return {
+        user_id: userId,
+        this_week: { period: 'this_week', waste_kg: 0, money_usd: 0, co2_kg: 0, event_count: 0 },
+        last_week: { period: 'last_week', waste_kg: 0, money_usd: 0, co2_kg: 0, event_count: 0 },
+        all_time: { period: 'all_time', waste_kg: 0, money_usd: 0, co2_kg: 0, event_count: 0 },
+        weekly_goal: { current_kg: 0, goal_kg: 2, percentage: 0, week_start: weekStart.toISOString().split('T')[0] },
+        comparison: {}
+      };
+    }
+  },
+
+  /**
+   * Get gamification state (badges, streak, goals) for a user
+   * @param userId - User ID
+   */
+  async getGamification(userId: string): Promise<{
+    user_id: string;
+    streak: { current: number; longest: number; last_active?: string; is_active_today: boolean };
+    badges: Array<{ type: string; tier: string; name: string; description: string; earned_at?: string; progress?: number }>;
+    weekly_goal: { current_kg: number; goal_kg: number; percentage: number; week_start: string };
+    next_badge_progress?: { type: string; tier: string; name: string; description: string; progress: number; next_tier_threshold: number };
+  }> {
+    try {
+      const response = await axios.get(`${this._impactBaseUrl()}/badges/${userId}`, {
+        headers: { 'Accept': 'application/json' },
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get Gamification API Error:', error);
+      const today = new Date();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay() + 1);
+      
+      return {
+        user_id: userId,
+        streak: { current: 0, longest: 0, is_active_today: false },
+        badges: [],
+        weekly_goal: { current_kg: 0, goal_kg: 2, percentage: 0, week_start: weekStart.toISOString().split('T')[0] }
+      };
+    }
+  },
+
+  /**
+   * Update weekly goal for a user
+   * @param userId - User ID
+   * @param goalKg - New weekly goal in kg
+   */
+  async updateWeeklyGoal(userId: string, goalKg: number): Promise<{ message: string; success: boolean }> {
+    try {
+      const response = await axios.put(
+        `${this._impactBaseUrl()}/goal`,
+        { user_id: userId, weekly_goal_kg: goalKg },
+        {
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          timeout: 10000,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.detail || 'Failed to update goal');
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get recent impact events for a user
+   * @param userId - User ID
+   * @param limit - Maximum events to return (default 10)
+   */
+  async getImpactHistory(userId: string, limit: number = 10): Promise<{
+    events: Array<{
+      id: string;
+      source: string;
+      total_waste_kg: number;
+      total_cost_usd: number;
+      total_co2_kg: number;
+      created_at: string;
+    }>;
+    count: number;
+  }> {
+    try {
+      const response = await axios.get(`${this._impactBaseUrl()}/history/${userId}`, {
+        params: { limit },
+        headers: { 'Accept': 'application/json' },
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get Impact History API Error:', error);
+      return { events: [], count: 0 };
+    }
+  },
 };
