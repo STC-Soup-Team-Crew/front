@@ -1,4 +1,4 @@
-# 🌱 Meal Maker - React Native Frontend
+# 🌱 Meal Master - React Native Frontend
 
 An eco-friendly React Native application that helps users reduce food waste by generating recipes based on photos of their fridge or pantry.
 
